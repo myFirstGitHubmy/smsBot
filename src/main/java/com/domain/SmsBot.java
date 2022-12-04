@@ -1,14 +1,14 @@
 package com.domain;
 
-import com.dictiondary.DictionaryWord;
-import com.utils.StringUtils;
+import com.service.MessageService;
+import com.service.impl.MessageServiceImpl;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class SmsBot extends TelegramLongPollingBot {
-    DictionaryWord words = new DictionaryWord();
+
 
     private final MessageService messageService = new MessageServiceImpl();
 
@@ -29,23 +29,11 @@ public class SmsBot extends TelegramLongPollingBot {
         }
 
         if (update.getMessage().hasText()) {
-            String receivedMessage = update.getMessage().getText().toLowerCase();
-            SendMessage sendMessage = new SendMessage();
-            switch (receivedMessage) {
-                case "/start" -> messageService.sendMsg(sendMessage, update.getMessage(), "123456");
-                case "история" -> messageService.sendMsg(sendMessage, update.getMessage(), "История");
-                case "отправить смс на номер" -> messageService.sendMsg(sendMessage, update.getMessage(), "смс");
-                default -> {
-                    if (StringUtils.contains(words.getGreeting(), receivedMessage)) {
-                        messageService.sendMsg(sendMessage, update.getMessage(), words.getGreetingWord());
-                    } else {
-                        messageService.sendMsg(sendMessage, update.getMessage(), "команда не распознана");
-                    }
-                }
-            }
-
+            String receivedMessage = update.getMessage().getText();
+            SendMessageContext context = new SendMessageContext(new SendMessage(), receivedMessage);
+            messageService.handlerMessage(context, receivedMessage, update);
             try {
-                execute(sendMessage);
+                execute(context.getSendMessage());
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
